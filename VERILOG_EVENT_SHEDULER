@@ -1,0 +1,64 @@
+The Verilog Event Scheduler ensures that all events in a simulation happen in the correct order within the same simulation time. It divides these events into different regions (or levels). Let’s break it down step-by-step in a simple and beginner-friendly way:
+
+Four Regions in the Verilog Scheduler
+
+Active Region:
+What Happens?
+Most of your code runs here, such as assignments, always/initial blocks, and RHS evaluations for non-blocking assignments (<=).
+This is where the simulator starts executing events at the current simulation time.
+Key Points:
+Blocking (=) assignments: Both the value is calculated and assigned here.
+Non-blocking (<=) assignments: Only the RHS (right-hand side) is calculated here, but the assignment to the variable (LHS) is delayed to the NBA region.
+
+Example:
+always @(posedge clk)
+  q <= d;  // RHS (d) is calculated now but q is updated later.
+  
+Inactive Region:
+What Happens?
+Events that are delayed by #0 or other delays are handled here. These are executed after all active events for the current simulation time are completed.
+Why Use This?
+It’s useful for adding a small delay or resolving timing issues (like breaking combinational loops).
+
+Example:
+#0 x = y;  // Scheduled to execute here after active region.
+
+NBA (Non-Blocking Assign Update) Region:
+What Happens?
+In this region, the actual assignments for non-blocking statements (<=) are made.
+The simulator waits until all active and inactive events are done before updating the variable (LHS of <=).
+Why This Matters?
+It ensures predictable, race-free behavior in digital designs.
+
+Example:
+always @(posedge clk)
+  q <= d;  // RHS of d was calculated earlier, now q gets the value.
+  
+Postponed Region:
+What Happens?
+This is the last region for the current time step. It’s used for final observation tasks like $monitor and $strobe.
+Key Points:
+$monitor keeps track of variable changes and shows their final updated values for the current time.
+$strobe displays the value once at the end of the simulation time step.
+
+Example:
+$strobe("Value of q=%0d at time %0t", q, $time);  // Final state of q
+How These Regions Work Together (Order of Execution)
+At each simulation time step:
+
+Active Region: Evaluate RHS and run procedural code.
+Inactive Region: Handle delayed events (like #0).
+NBA Region: Assign values for non-blocking statements (<=).
+Postponed Region: Observe and report final values ($monitor, $strobe).
+Analogy for Easy Understanding
+Think of a teacher checking homework in a classroom:
+
+Active Region: The teacher collects all notebooks and notes down what students have written (evaluates RHS).
+Inactive Region: The teacher looks at any special notes or delays (e.g., "I'll check your correction later").
+NBA Region: The teacher marks the final scores (updates LHS).
+Postponed Region: The teacher announces the results to the class (monitors/strobes).
+Key Takeaways for Freshers
+Blocking (=): Happens immediately in the Active Region.
+Non-blocking (<=): RHS is calculated in the Active Region, and the value is assigned in the NBA Region.
+$monitor and $strobe: Show final values after everything is done in the current time step.
+This scheduler ensures everything happens in the correct order, so your simulation matches real hardware behavior.
